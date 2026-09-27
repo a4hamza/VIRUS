@@ -5,7 +5,7 @@ const { atlasBox } = require('../../lib/utils');
 
 module.exports = {
   name: 'resetspam',
-  aliases: ['restspam', 'clearspam', 'unspam', 'clearwarn', 'resetspams'],
+  aliases: ['resertspam', 'resert', 'restspam', 'clearspam', 'unspam', 'clearwarn', 'resetspams'],
   category: 'group',
   description: 'Reset sticker spam, message spam warning limits and official warnings for a group member',
   usage: '.resetspam @user | .resetspam <number> | .resetspam <name> | (reply with .resetspam)',

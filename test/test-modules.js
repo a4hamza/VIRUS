@@ -108,24 +108,25 @@ async function runTests() {
     }
   };
 
-  // User sends 1st, 2nd, and 3rd sticker -> no kick, no warn
+  // User sends 1st, 2nd, 3rd, and 4th sticker -> no kick, no warn
   await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
   await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
   await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  assert.strictEqual(sentMessages.length, 0, 'No warning should be sent on 1st, 2nd, or 3rd sticker');
-  assert.strictEqual(kickedUsers.length, 0, 'No kick on 1st, 2nd, or 3rd sticker');
+  await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
+  assert.strictEqual(sentMessages.length, 0, 'No warning should be sent on 1st to 4th sticker');
+  assert.strictEqual(kickedUsers.length, 0, 'No kick on 1st to 4th sticker');
 
-  // User sends 4th sticker -> WARNING expected (Sticker limit reached)
+  // User sends 5th sticker -> WARNING expected (Sticker limit reached)
   await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  assert.strictEqual(sentMessages.length, 1, 'Warning message must be sent on 4th sticker');
+  assert.strictEqual(sentMessages.length, 1, 'Warning message must be sent on 5th sticker');
   assert(sentMessages[0].content.text.includes('STICKER SPAM WARNING'), 'Should be sticker warning message');
-  assert.strictEqual(kickedUsers.length, 0, 'User should not be kicked yet at 4th sticker');
+  assert.strictEqual(kickedUsers.length, 0, 'User should not be kicked yet at 5th sticker');
 
-  // User sends 5th sticker -> AUTO KICK expected!
+  // User sends 6th sticker -> AUTO KICK expected!
   await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  assert(kickedUsers.includes(spammerUser), 'User must be kicked on 5th sticker spam');
+  assert(kickedUsers.includes(spammerUser), 'User must be kicked on 6th sticker spam');
   assert(sentMessages.some(m => m.content.text.includes('AUTO KICK - STICKER SPAM')), 'Auto kick notice sent');
-  console.log('  ✅ Sticker Spam: Warned at 4th, auto-kicked at 5th.');
+  console.log('  ✅ Sticker Spam: Warned at 5th, auto-kicked at 6th.');
 
   // Test 8: Message Spam Auto-Kick Logic
   console.log('\n▶ Test 8: Verifying Repeated Message Spam Auto-Kick Logic...');
@@ -829,6 +830,13 @@ async function runTests() {
   assert.strictEqual(resolveHero('anya').id, 'loli', "'anya' alias must resolve to Loli");
   assert.strictEqual(resolveHero('klee').id, 'loli', "'klee' alias must resolve to Loli");
   assert.strictEqual(resolveHero('chibi').id, 'loli', "'chibi' alias must resolve to Loli");
+
+  // Test Ben Tennyson (Ben 10) resolution
+  const benVoice = resolveHero('ben');
+  assert(benVoice !== null && benVoice.id === 'ben', "'ben' must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('ben10').id, 'ben', "'ben10' alias must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('tennyson').id, 'ben', "'tennyson' alias must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('omnitrix').id, 'ben', "'omnitrix' alias must resolve to Ben Tennyson");
 
   const randVoice = getRandomAnimeVoice();
   assert(randVoice && randVoice.name && randVoice.emoji, 'getRandomAnimeVoice must return valid anime voice');

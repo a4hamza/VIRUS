@@ -19,10 +19,10 @@ module.exports = {
     enabled: true,
     
     // Sticker Spam Rules:
-    // 4th rapid sticker = Warning
-    // 5th rapid sticker = Auto-Kick
-    stickerWarningThreshold: 4,
-    stickerKickThreshold: 5,
+    // 5th rapid sticker = Warning
+    // 6th rapid sticker = Auto-Kick
+    stickerWarningThreshold: 5,
+    stickerKickThreshold: 6,
     stickerTimeWindowMs: 12000, // 12 seconds window
 
     // Message Spam Rules:
