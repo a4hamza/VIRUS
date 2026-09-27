@@ -108,11 +108,10 @@ async function runTests() {
     }
   };
 
-  // User sends 1st, 2nd, 3rd, and 4th sticker -> no kick, no warn
-  await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
-  await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
+  // User sends 1st to 4th sticker -> no kick, no warn
+  for (let i = 0; i < 4; i++) {
+    await moderator.handleStickerSpam(mockSock, mockGroup, spammerUser, mockGroupMetadata);
+  }
   assert.strictEqual(sentMessages.length, 0, 'No warning should be sent on 1st to 4th sticker');
   assert.strictEqual(kickedUsers.length, 0, 'No kick on 1st to 4th sticker');
 
@@ -831,19 +830,19 @@ async function runTests() {
   assert.strictEqual(resolveHero('klee').id, 'loli', "'klee' alias must resolve to Loli");
   assert.strictEqual(resolveHero('chibi').id, 'loli', "'chibi' alias must resolve to Loli");
 
-  // Test Ben Tennyson (Ben 10) resolution
-  const benVoice = resolveHero('ben');
-  assert(benVoice !== null && benVoice.id === 'ben', "'ben' must resolve to Ben Tennyson");
-  assert.strictEqual(resolveHero('ben10').id, 'ben', "'ben10' alias must resolve to Ben Tennyson");
-  assert.strictEqual(resolveHero('tennyson').id, 'ben', "'tennyson' alias must resolve to Ben Tennyson");
-  assert.strictEqual(resolveHero('omnitrix').id, 'ben', "'omnitrix' alias must resolve to Ben Tennyson");
+  // Test Ben 10 Classic (Tara Strong 10-year-old boy hero) resolution
+  const ben10Voice = resolveHero('ben10');
+  assert(ben10Voice !== null && ben10Voice.id === 'ben10', "'ben10' must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('ben').id, 'ben10', "'ben' alias must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('tennyson').id, 'ben10', "'tennyson' alias must resolve to Ben Tennyson");
+  assert.strictEqual(resolveHero('omnitrix').id, 'ben10', "'omnitrix' alias must resolve to Ben Tennyson");
 
   const randVoice = getRandomAnimeVoice();
   assert(randVoice && randVoice.name && randVoice.emoji, 'getRandomAnimeVoice must return valid anime voice');
 
   // Test catalog
   const catalog = getHeroCatalog();
-  assert(catalog.includes('Sara') && catalog.includes('Gul') && catalog.includes('Asad') && catalog.includes('Loli'), 'Catalog must list Sara, Gul, Asad, and Loli');
+  assert(catalog.includes('Sara') && catalog.includes('Gul') && catalog.includes('Asad') && catalog.includes('Loli') && catalog.includes('Ben Tennyson'), 'Catalog must list Sara, Gul, Asad, Loli, and Ben Tennyson');
 
   // Test catalog command execution: .tts list
   sentMessages.length = 0;
