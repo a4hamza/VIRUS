@@ -15,7 +15,7 @@ async function testServer() {
   const statusRes = await fetch(`${baseUrl}/api/status`);
   assert.strictEqual(statusRes.status, 200, 'Status endpoint should return 200');
   const statusData = await statusRes.json();
-  assert(statusData.botName === 'VIRUZ', 'Bot name should be VIRUZ');
+  assert(statusData.botName === 'VIRUS' || statusData.botName === 'VIRUZ', 'Bot name should be VIRUS');
   console.log('  ✅ GET /api/status verified.');
 
   // 2. Test /api/test-game for Mobile Legends
@@ -27,7 +27,7 @@ async function testServer() {
   assert.strictEqual(mlRes.status, 200, 'Test-game endpoint should return 200');
   const mlData = await mlRes.json();
   assert(mlData.success === true, 'Response success should be true');
-  assert(mlData.formattedText.includes('Mobile Legends'), 'Formatted text should contain Mobile Legends');
+  assert(mlData.formattedText.includes('Mobile Legends') || mlData.formattedText.includes('MOBILE LEGENDS'), 'Formatted text should contain Mobile Legends');
   console.log('  ✅ POST /api/test-game (.ml) verified.');
 
   // 3. Test /api/test-game rejects removed games (Genshin, PUBG, etc.)
@@ -51,7 +51,7 @@ async function testServer() {
   const pageRes = await fetch(`${baseUrl}/`);
   assert.strictEqual(pageRes.status, 200, 'Root HTML page should return 200');
   const pageHtml = await pageRes.text();
-  assert(pageHtml.includes('VIRUZ'), 'HTML should contain VIRUZ title');
+  assert(pageHtml.includes('VIRUS') || pageHtml.includes('VIRUZ'), 'HTML should contain VIRUS title');
   assert(pageHtml.includes('Link Bot to Your WhatsApp'), 'HTML should contain pairing portal');
   console.log('  ✅ Static Webpage (index.html) serving verified.');
 

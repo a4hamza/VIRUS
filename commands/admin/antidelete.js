@@ -5,53 +5,82 @@ module.exports = {
   name: 'antidelete',
   aliases: ['antidelet', 'antidel', 'antirevoke'],
   category: 'admin',
-  description: 'Enable, disable or check stealth Anti-Delete message recovery',
-  usage: '.antidelete [on/off/status]',
+  description: 'Enable, disable or check stealth Anti-Delete for Private DMs (and view group status)',
+  usage: '.antidelete [on/off/status] | .antidelgroup [on/off]',
   async execute({ sock, msg, from, sender, args }) {
     const isOwner = safety.isOwner(sender) || msg.key.fromMe;
-    const action = args[0]?.toLowerCase();
+    const firstArg = args[0]?.toLowerCase();
+    const secondArg = args[1]?.toLowerCase();
 
-    if (action === 'on' || action === 'enable' || action === '1') {
+    // Handle .antidelete group on / off
+    if (firstArg === 'group' || firstArg === 'gc') {
+      if (!isOwner) {
+        return sock.sendMessage(from, {
+          text: '⛔ *Access Denied!*\nOnly the bot owner or group admin can configure Group Anti-Delete.'
+        }, { quoted: msg });
+      }
+      if (secondArg === 'on' || secondArg === 'enable' || secondArg === '1') {
+        antiDelete.setGroupEnabled(true);
+        return sock.sendMessage(from, {
+          text: '🛡️ *Group Anti-Delete Enabled!* 🟢\nDeleted messages in group chats will be forwarded directly to your private DM.'
+        }, { quoted: msg });
+      } else if (secondArg === 'off' || secondArg === 'disable' || secondArg === '0') {
+        antiDelete.setGroupEnabled(false);
+        return sock.sendMessage(from, {
+          text: '⚠️ *Group Anti-Delete Disabled!* 🔴\nGroup deleted messages will not be recovered.'
+        }, { quoted: msg });
+      }
+    }
+
+    if (firstArg === 'on' || firstArg === 'enable' || firstArg === '1') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'
         }, { quoted: msg });
       }
-      antiDelete.setEnabled(true);
+      antiDelete.setPrivateEnabled(true);
       return sock.sendMessage(from, {
-        text: '🛡️ *Anti-Delete Enabled!* 🟢\n\nAll deleted messages (text, photos, videos, voice notes, stickers) will be caught stealthily and sent directly to your private inbox.\nNo notifications or tags will be sent to the group or chat.'
+        text: '🛡️ *Private Chat Anti-Delete Enabled!* 🟢\n\nAll deleted messages in private chats (DMs) will be caught stealthily and sent directly to your inbox.\n_Note: For group chats, use `.antidelgroup on`._'
       }, { quoted: msg });
     }
 
-    if (action === 'off' || action === 'disable' || action === '0') {
+    if (firstArg === 'off' || firstArg === 'disable' || firstArg === '0') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'
         }, { quoted: msg });
       }
-      antiDelete.setEnabled(false);
+      antiDelete.setPrivateEnabled(false);
       return sock.sendMessage(from, {
-        text: '⚠️ *Anti-Delete Disabled!* 🔴\nDeleted messages will not be recovered.'
+        text: '⚠️ *Private Chat Anti-Delete Disabled!* 🔴\nDeleted messages from private DMs will not be recovered.'
       }, { quoted: msg });
     }
 
-    if (action === 'toggle') {
+    if (firstArg === 'toggle') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'
         }, { quoted: msg });
       }
-      antiDelete.setEnabled(!antiDelete.isEnabled());
-      const newStatus = antiDelete.isEnabled() ? '🟢 *ENABLED* (Stealth Private DM)' : '🔴 *DISABLED*';
+      antiDelete.setPrivateEnabled(!antiDelete.isPrivateEnabled());
+      const newStatus = antiDelete.isPrivateEnabled() ? '🟢 *ENABLED*' : '🔴 *DISABLED*';
       return sock.sendMessage(from, {
-        text: `🛡️ *Anti-Delete Status Changed:* ${newStatus}`
+        text: `🛡️ *Private Anti-Delete Status:* ${newStatus}`
       }, { quoted: msg });
     }
 
-    // Default: Show current status WITHOUT toggling!
-    const status = antiDelete.isEnabled() ? '🟢 *ENABLED* (Stealth Private DM)' : '🔴 *DISABLED*';
+    // Default: Show full status for both Private DM and Group
+    const privStatus = antiDelete.isPrivateEnabled() ? '🟢 *ENABLED* (Private DM)' : '🔴 *DISABLED*';
+    const grpStatus = antiDelete.isGroupEnabled() ? '🟢 *ENABLED* (Sent to DM)' : '🔴 *DISABLED*';
+
     await sock.sendMessage(from, {
-      text: `🛡️ *Anti-Delete Status:* ${status}\n\n• Use \`.antidelete on\` to activate.\n• Use \`.antidelete off\` to deactivate.\n\n_When enabled, all deleted messages are recovered silently and sent to your private inbox._`
+      text: `🛡️ *VIRUS ANTI-DELETE STATUS:*\n\n` +
+            `• *Private Chats (DM):* ${privStatus}\n` +
+            `• *Group Chats (GC):* ${grpStatus}\n\n` +
+            `_Control Commands:_\n` +
+            `• \`.antidelete on / off\` - Toggle for private messages\n` +
+            `• \`.antidelgroup on / off\` - Toggle for group messages\n\n` +
+            `📌 _All recovered deleted messages arrive directly in your private DM inbox without alerting other users._`
     }, { quoted: msg });
   }
 };

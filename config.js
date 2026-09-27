@@ -1,17 +1,19 @@
 /**
- * Atlas-MD WhatsApp Bot Configuration
+ * VIRUS WhatsApp Bot Configuration
  */
 
 module.exports = {
-  // Bot Information
-  botName: process.env.BOT_NAME || 'VIRUZ',
-  ownerName: process.env.OWNER_NAME || 'VIRUZ',
-  ownerNumbers: ['923116469820', '923000000000'], // Added user's WhatsApp phone number
+  // Bot Information & Identity
+  botName: process.env.BOT_NAME || 'VIRUS',
+  ownerName: process.env.OWNER_NAME || 'VIRUS',
+  ownerNumbers: process.env.OWNER_NUMBER 
+    ? [process.env.OWNER_NUMBER.replace(/[^0-9]/g, '')] 
+    : ['923116469820'], // Default owner phone number (also dynamically auto-assigned when paired)
   prefix: '.', // Default prefix
   prefixes: ['.', ',', '!', '#', '/'], // Supported prefixes: .menu, ,menu, !menu, #menu, /menu
   sessionDir: './auth_info_baileys',
 
-  // Web Dashboard Settings
+  // Web Dashboard Settings (HYEHOST compatibility)
   port: process.env.PORT || 8080,
 
   // Group Moderation & Anti-Spam Thresholds
@@ -44,5 +46,11 @@ module.exports = {
   // Group Welcome & Goodbye Notifications
   welcome: {
     enabled: true, // Enabled by default
+  },
+
+  // Anti-Delete Defaults
+  antiDelete: {
+    groupEnabled: true,   // Controlled by .antidelgroup on/off
+    privateEnabled: true  // Controlled by .antidelete on/off
   }
 };

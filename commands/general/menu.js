@@ -11,54 +11,56 @@ module.exports = {
     const p = config.prefix;
 
     const body = `
-👋 *Welcome to VIRUZ WhatsApp Bot*
-⚡ High-Speed • Zero-Lag System
-Prefixes: \`. \` or \`, \` | Connected
+👋 *Welcome to VIRUS WhatsApp Bot*
+⚡ Lightweight • Fast • Anti-Ban Safe
+Prefixes: \`${p}\` (also supports \`,\` \`!\` \`#\` \`/\`)
 
-🎮 *GAME ACCOUNT CHECKER:*
-• \`${p}ml <id> <zone>\` - Mobile Legends (Player Info, Rank, Region, Passes)
+🎮 *MOBILE LEGENDS CHECKER:*
+• \`${p}ml <account_id> <zone_id>\` - Live MLBB account info (Nickname, Server, exact Country flag & Region)
 
-🎙️ *PAKISTANI URDU & ANIME VOICE TTS (FOR EVERYONE):*
-• \`${p}sara <message>\` - Sara (Pakistani Urdu Girl 🧕)
-• \`${p}goku <message>\` - Son Goku (Super Saiyan 💥)
-• \`${p}gojo <message>\` - Satoru Gojo (The Honored One 🤞)
-• \`${p}sukuna <message>\` - Ryomen Sukuna (King of Curses 🩸)
-• \`${p}naruto <message>\` - Naruto Uzumaki (Seventh Hokage 🍥)
-• \`${p}luffy <message>\` - Monkey D. Luffy (Straw Hat 👒)
-• \`${p}tts <character> <message>\` - Speak in any voice style
-• \`${p}tts random <message>\` - Speaks in a random anime voice 🎲
-• \`${p}tts list\` - View all voice styles & commands
+🎙️ *TTS & BEN 10 HERO VOICES (FOR EVERYONE):*
+• \`${p}ben10 <msg>\` - Ben Tennyson (Classic 2005 Ben 10 ⌚)
+• \`${p}sara <msg>\` - Sara (Pakistani Urdu Girl 🧕)
+• \`${p}gul <msg>\` - Gul (Soft Urdu Girl 🌸)
+• \`${p}asad <msg>\` - Asad (Pakistani Urdu Male 🧔)
+• \`${p}loli <msg>\` - Anya / Loli (Waku waku chibi girl 🌸)
+• \`${p}goku <msg>\` - Son Goku (Super Saiyan 💥)
+• \`${p}gojo <msg>\` - Satoru Gojo (The Honored One 🤞)
+• \`${p}sukuna <msg>\` - Ryomen Sukuna (King of Curses 🩸)
+• \`${p}naruto <msg>\` - Naruto Uzumaki (Seventh Hokage 🍥)
+• \`${p}tts <character> <msg>\` - Speak in any character voice
+• \`${p}tts random <msg>\` - Random anime voice 🎲
+• \`${p}tts list\` - View all 20+ voice styles
 • \`${p}tts [on/off]\` - Toggle TTS in group (Admins only)
-
-👥 *GROUP PARTICIPATION:*
-• \`${p}add <number/@user>\` - Add or invite a member to the group
 
 🛡️ *GROUP MODERATION (Admins Only):*
 • \`${p}warn @user [reason]\` - Official warning (6 warns = Auto-Kick)
-• \`${p}resetspam @user\` - Reset member's spam limits & warnings
-• \`${p}kick @user\` - Remove member from group (Admins protected)
-• \`${p}welcome [on/off]\` - Toggle auto welcome & goodbye messages
-• \`${p}tagall [text]\` - Announcement with member roster (no ghost-tagging)
-• \`${p}hidetag [text]\` - Clean announcement without background pings
+• \`${p}warn reset @user\` - Clear user warnings
+• \`${p}resetspam @user\` - Reset user's spam counts & limits
+• \`${p}kick @user\` - Remove member (Admins protected)
 • \`${p}mute\` - Close group chat (admins only)
 • \`${p}unmute\` - Open group chat for everyone
+• \`${p}welcome [on/off]\` - Toggle auto welcome & goodbye
 • \`${p}groupinfo\` - View group settings & active thresholds
 
-⚙️ *ANTI-SPAM SYSTEM (Automatic):*
-• *Stickers:* ${config.antiSpam.stickerWarningThreshold}th = Warning ⚠️ | ${config.antiSpam.stickerKickThreshold}th = Auto-Kick 🚫
-• *Messages:* ${config.antiSpam.messageWarningThreshold}th repeat = Warning ⚠️ | ${config.antiSpam.messageKickThreshold}th = Auto-Kick 🚫
+⚙️ *AUTOMATIC ANTI-SPAM (Strict GC Protection):*
+• *Sticker Spam:* 5th sticker = Warn ⚠️ | 6th sticker = Auto-Kick 🚫
+• *Message Spam:* 5th repeat = Warn ⚠️ | 6th repeat = Auto-Kick 🚫
 • *Admins:* 100% Protected (Never warned or kicked)
 
-ℹ️ *UTILITIES & TOOLS:*
+👁️ *STEALTH INBOX & PRIVATE RECOVERY:*
+• \`${p}viewonce\` (or \`${p}vv\`) - Revealing View-Once media sent directly to your private DM
+• \`${p}antidelgroup [on/off]\` - Capture deleted group messages secretly to owner DM
+• \`${p}antidelete [on/off]\` - Capture deleted private messages secretly to owner DM
+
+ℹ️ *BOT UTILITIES:*
 • \`${p}bot [on/off]\` - Turn bot on/off in this group
-• \`${p}viewonce\` (or \`${p}vv\`) - Silently save View Once media to your inbox
-• \`${p}antidelete [on/off]\` - Toggle deleted messages recovery
 • \`${p}ping\` - Check bot response speed & latency
 • \`${p}info\` - Bot status and host information
 • \`${p}menu\` - Open this command list
 `.trim();
 
-    const output = atlasBox('VIRUZ MAIN MENU', body);
+    const output = atlasBox('VIRUS MAIN MENU', body, 'VIRUS • WHATSAPP BOT');
     await sock.sendMessage(from, { text: output }, { quoted: msg });
   }
 };

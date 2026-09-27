@@ -26,17 +26,14 @@ async function runTests() {
   assert(commandHandler.getCommand('add') !== null, 'Command .add should exist');
   console.log('  ✅ Command Handler: Active commands loaded; other games (pubg, coc, genshin, hok) confirmed removed.');
 
-  // Test 2: Mobile Legends Checker (Accurate Passes & Country Flag)
+  // Test 2: Mobile Legends Checker (Accurate Nickname & Country Flag)
   console.log('\n▶ Test 2: Verifying Mobile Legends (.ml) Checker...');
   const mlRes = await checkMobileLegends('1114917746', '13486');
-  assert(mlRes.includes('Mobile Legends'), 'ML output should mention Mobile Legends');
+  assert(mlRes.includes('Mobile Legends') || mlRes.includes('MOBILE LEGENDS'), 'ML output should mention Mobile Legends');
   assert(mlRes.includes('1114917746'), 'ML output should contain Account ID');
   assert(mlRes.includes('13486'), 'ML output should contain Zone/Server');
   assert(mlRes.includes('🇮🇩 Indonesia'), 'ML output should contain country flag and name');
-  assert(mlRes.includes('Weekly Diamond Pass (WDP)'), 'ML output should include Weekly Diamond Pass spec');
-  assert(mlRes.includes('Starlight Membership'), 'ML output should include Starlight Membership spec');
-  assert(mlRes.includes('Twilight Pass'), 'ML output should include Twilight Pass spec');
-  assert(mlRes.includes('First Recharge Bonus'), 'ML output should include First Recharge bonus');
+  assert(mlRes.includes('Outrageous Dominance'), 'ML output should contain in-game nickname');
   console.log('  ✅ Mobile Legends output verified with accurate player information & professional layout.');
 
   // Test 3: PUBG Mobile Complete Removal
