@@ -95,7 +95,7 @@ A fast, lightweight, and anti-ban safe Multi-Device WhatsApp Bot optimized for f
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/s4killer66-afk/VIRUS.git
+git clone https://github.com/a4hamza/VIRUS.git
 cd VIRUS
 npm install
 ```
