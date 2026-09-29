@@ -3,11 +3,31 @@
  */
 
 process.on('uncaughtException', (err) => {
-  console.log('[System Handled Exception]:', err.message);
+  const msg = err?.message || String(err);
+  if (
+    msg.includes('MessageCounterError') ||
+    msg.includes('Session error') ||
+    msg.includes('Key used already or never filled') ||
+    msg.includes('Bad MAC') ||
+    msg.includes('No matching sessions found')
+  ) {
+    return;
+  }
+  console.log('[System Handled Exception]:', msg);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.log('[System Handled Rejection]:', reason?.message || reason);
+  const msg = reason?.message || String(reason);
+  if (
+    msg.includes('MessageCounterError') ||
+    msg.includes('Session error') ||
+    msg.includes('Key used already or never filled') ||
+    msg.includes('Bad MAC') ||
+    msg.includes('No matching sessions found')
+  ) {
+    return;
+  }
+  console.log('[System Handled Rejection]:', msg);
 });
 
 // ── HYEHOST / Container Auto-Dependency Check ──
