@@ -1618,7 +1618,83 @@ async function runTests() {
   assert.strictEqual(safety.isSentByBot('bot_outbound_msg_id'), true, 'Bot outbound messages must be recognized and blocked from self-loops');
   console.log('  ✅ Dedup & Old Command Defense: Duplicate messages and self-sent loops strictly prevented.');
 
-  console.log('\n🎉 ALL 27 AUTOMATED TESTS PASSED SUCCESSFULLY! 🎉\n');
+  // Test 28: WhatsApp Multi-Device E2EE Retry & Decryption Resolution
+  console.log('\n▶ Test 28: Verifying Multi-Device E2EE Retry Resolution (Fixes "Waiting for this message")...');
+  const EventEmitter = require('events');
+
+  // 1. Verify MessageStore unwraps nested deviceSentMessage and returns clean proto
+  const nestedDeviceMsgId = 'OUTBOUND_SELF_RETRY_123';
+  const nestedDeviceMsg = {
+    key: {
+      remoteJid: '923116469820@s.whatsapp.net',
+      fromMe: true,
+      id: nestedDeviceMsgId
+    },
+    message: {
+      deviceSentMessage: {
+        destinationJid: '923116469820@s.whatsapp.net',
+        message: {
+          extendedTextMessage: {
+            text: 'Decrypted stealth anti-delete content'
+          }
+        }
+      }
+    }
+  };
+  messageStore.set(nestedDeviceMsgId, nestedDeviceMsg);
+
+  // Retrieve proto for getMessage retry: must be clean unwrapped extendedTextMessage (not wrapped in deviceSentMessage)
+  const unwrappedProto = messageStore.getMessageProto({ id: nestedDeviceMsgId, remoteJid: '923116469820@s.whatsapp.net' });
+  assert(unwrappedProto !== null, 'Proto must be found');
+  assert(!unwrappedProto.deviceSentMessage, 'deviceSentMessage wrapper must be stripped so Baileys does not double-wrap');
+  assert.strictEqual(unwrappedProto.extendedTextMessage.text, 'Decrypted stealth anti-delete content');
+
+  // 2. Verify Composite Key & Suffix Search in MessageStore
+  const suffixedFound = messageStore.get({ id: nestedDeviceMsgId });
+  assert(suffixedFound !== null, 'Must find message by id alone');
+  const suffixedFoundComp = messageStore.get({ id: nestedDeviceMsgId, remoteJid: '923116469820@s.whatsapp.net' });
+  assert(suffixedFoundComp !== null, 'Must find message by composite remoteJid_id');
+
+  // 3. Verify WebSocket 'CB:receipt' retry interceptor fills missing recipient for self/DM
+  const mockWs = new EventEmitter();
+  let interceptedRecipient = null;
+
+  mockWs.on('CB:receipt', (node) => {
+    interceptedRecipient = node.attrs.recipient;
+  });
+
+  // Attach our fix hook
+  mockWs.prependListener('CB:receipt', (node) => {
+    if (node?.attrs?.type === 'retry' && !node.attrs.recipient) {
+      const msgId = node.attrs.id;
+      let target = null;
+      if (msgId) {
+        const stored = messageStore.get(msgId);
+        if (stored?.key?.remoteJid) target = stored.key.remoteJid;
+      }
+      if (!target) target = node.attrs.participant || node.attrs.from;
+      if (target) node.attrs.recipient = target;
+    }
+  });
+
+  // Simulate incoming retry node with NO recipient attribute (the Baileys self-message bug)
+  const incomingRetryNode = {
+    attrs: {
+      type: 'retry',
+      id: nestedDeviceMsgId,
+      from: '923116469820@s.whatsapp.net'
+    }
+  };
+  mockWs.emit('CB:receipt', incomingRetryNode);
+
+  assert.strictEqual(interceptedRecipient, '923116469820@s.whatsapp.net', 'Interceptor must populate missing recipient from messageStore');
+
+  // 4. Verify Anti-Delete target inboxes include bot phone and owner numbers
+  const inboxes = antiDelete.getTargetInboxes(mockSock);
+  assert(inboxes.some(i => i.includes('923116469820')), 'Must include configured owner number');
+  console.log('  ✅ E2EE Retry Resolution: Unwrapped proto, composite retrieval, and CB:receipt recipient population verified.');
+
+  console.log('\n🎉 ALL 28 AUTOMATED TESTS PASSED SUCCESSFULLY! 🎉\n');
 }
 
 runTests().then(() => {

@@ -38,14 +38,40 @@ module.exports = {
     const myPhone = sock.user?.id ? sock.user.id.split('@')[0].split(':')[0].replace(/[^0-9]/g, '') : null;
     let targetInbox = myPhone ? `${myPhone}@s.whatsapp.net` : ownerJid;
 
-    // If a non-owner member ran the command in a group, deliver to their own private DM
-    if (isGroup && !msg.key?.fromMe) {
-      const senderJid = msg.key?.participant || msg.participant;
-      if (senderJid) {
-        const senderPhone = senderJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
-        if (senderPhone) {
-          targetInbox = `${senderPhone}@s.whatsapp.net`;
+    let groupMetadata = null;
+    if (isGroup && sock.groupMetadata) {
+      try {
+        groupMetadata = await sock.groupMetadata(from);
+      } catch (e) {}
+    }
+
+    const senderJid = msg.key?.participant || msg.participant;
+    const isSenderOwner = msg.key?.fromMe || (senderJid && safety.isOwner(senderJid));
+
+    if (isSenderOwner) {
+      // If owner ran command from their personal phone in a group, deliver to their personal DM
+      if (senderJid && !msg.key?.fromMe) {
+        const resolved = antiDelete.resolvePhoneNumber(senderJid, false, groupMetadata, sock, msg.key);
+        if (resolved && resolved !== 'Unknown') {
+          targetInbox = `${resolved}@s.whatsapp.net`;
         }
+      }
+      if (!targetInbox) {
+        targetInbox = myPhone ? `${myPhone}@s.whatsapp.net` : ownerJid;
+      }
+    } else if (isGroup && senderJid) {
+      // Non-owner member in group: safely resolve their phone (NEVER create invalid JID from raw LID digits)
+      const resolved = antiDelete.resolvePhoneNumber(senderJid, false, groupMetadata, sock, msg.key);
+      if (resolved && resolved !== 'Unknown') {
+        targetInbox = `${resolved}@s.whatsapp.net`;
+      } else if (!senderJid.endsWith('@lid')) {
+        const cleanPhone = senderJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+        if (cleanPhone && cleanPhone.length >= 7 && cleanPhone.length <= 15) {
+          targetInbox = `${cleanPhone}@s.whatsapp.net`;
+        }
+      }
+      if (!targetInbox) {
+        targetInbox = myPhone ? `${myPhone}@s.whatsapp.net` : ownerJid;
       }
     }
 
@@ -121,12 +147,13 @@ module.exports = {
     }
 
     let chatTitle = isGroup ? 'Group Chat' : 'Direct Message';
-    let groupMetadata = null;
-    if (isGroup && sock.groupMetadata) {
-      try {
-        groupMetadata = await sock.groupMetadata(from);
-        if (groupMetadata?.subject) chatTitle = groupMetadata.subject;
-      } catch (e) {}
+    if (isGroup) {
+      if (!groupMetadata && sock.groupMetadata) {
+        try {
+          groupMetadata = await sock.groupMetadata(from);
+        } catch (e) {}
+      }
+      if (groupMetadata?.subject) chatTitle = groupMetadata.subject;
     }
 
     const rawAuthorJid = contextInfo?.participant ||
@@ -154,12 +181,20 @@ module.exports = {
     // Delivery helper: STRICTLY delivers to targetInbox (never leaks into sender's chat)
     const sendMedia = async (payload) => {
       try {
-        await sock.sendMessage(targetInbox, payload);
+        const res = await sock.sendMessage(targetInbox, payload);
+        if (res?.key?.id) {
+          messageStore.set(res.key.id, res);
+          messageStore.set(`${targetInbox}_${res.key.id}`, res);
+        }
       } catch (sendErr) {
         // If primary targetInbox fails, fallback to configured owner JID, never the sender's chat
         if (targetInbox !== ownerJid) {
           try {
-            await sock.sendMessage(ownerJid, payload);
+            const res2 = await sock.sendMessage(ownerJid, payload);
+            if (res2?.key?.id) {
+              messageStore.set(res2.key.id, res2);
+              messageStore.set(`${ownerJid}_${res2.key.id}`, res2);
+            }
           } catch (e) {}
         }
       }
