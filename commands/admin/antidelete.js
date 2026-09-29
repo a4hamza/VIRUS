@@ -1,38 +1,62 @@
 const antiDelete = require('../../lib/antiDelete');
 const safety = require('../../lib/safety');
+const moderator = require('../../lib/groupModerator');
 
 module.exports = {
   name: 'antidelete',
-  aliases: ['antidelet', 'antidel', 'antirevoke'],
+  aliases: ['antidelet', 'antidel', 'antirevoke', 'antidelgroup', 'antideletegroup', 'antidelgrp', 'antirevokegroup'],
   category: 'admin',
-  description: 'Enable, disable or check stealth Anti-Delete for Private DMs (and view group status)',
-  usage: '.antidelete [on/off/status] | .antidelgroup [on/off]',
-  async execute({ sock, msg, from, sender, args }) {
+  description: 'Enable, disable or check stealth Anti-Delete for Private DMs and Group chats',
+  usage: '.antidelete [on/off/status] | .antidelgroup [on/off/status]',
+  async execute({ sock, msg, from, sender, isGroup, groupMetadata, args, commandName }) {
     const isOwner = safety.isOwner(sender) || msg.key.fromMe;
+    const isAdmin = isGroup && moderator.isGroupAdmin(sender, groupMetadata, msg);
+    const cmd = (commandName || '').toLowerCase();
     const firstArg = args[0]?.toLowerCase();
     const secondArg = args[1]?.toLowerCase();
 
-    // Handle .antidelete group on / off
-    if (firstArg === 'group' || firstArg === 'gc') {
-      if (!isOwner) {
+    // Check if targeting group anti-delete: via .antidelgroup command OR .antidelete group <action>
+    const isGroupCmd = cmd.includes('group') || cmd.includes('grp') || firstArg === 'group' || firstArg === 'gc';
+    const action = (firstArg === 'group' || firstArg === 'gc') ? secondArg : firstArg;
+
+    if (isGroupCmd) {
+      if (!isOwner && !isAdmin) {
         return sock.sendMessage(from, {
-          text: '⛔ *Access Denied!*\nOnly the bot owner or group admin can configure Group Anti-Delete.'
+          text: '⛔ *Access Denied!*\nOnly the Bot Owner or Group Admins can configure Group Anti-Delete.'
         }, { quoted: msg });
       }
-      if (secondArg === 'on' || secondArg === 'enable' || secondArg === '1') {
+
+      if (action === 'on' || action === 'enable' || action === '1') {
         antiDelete.setGroupEnabled(true);
         return sock.sendMessage(from, {
-          text: '🛡️ *Group Anti-Delete Enabled!* 🟢\nDeleted messages in group chats will be forwarded directly to your private DM.'
-        }, { quoted: msg });
-      } else if (secondArg === 'off' || secondArg === 'disable' || secondArg === '0') {
-        antiDelete.setGroupEnabled(false);
-        return sock.sendMessage(from, {
-          text: '⚠️ *Group Anti-Delete Disabled!* 🔴\nGroup deleted messages will not be recovered.'
+          text: '🛡️ *Group Anti-Delete Enabled!* 🟢\n\nAll deleted messages from group chats will be recovered stealthily and delivered directly to the bot owner\'s private inbox (DM).\n_No notifications or alerts are sent into the group._'
         }, { quoted: msg });
       }
+
+      if (action === 'off' || action === 'disable' || action === '0') {
+        antiDelete.setGroupEnabled(false);
+        return sock.sendMessage(from, {
+          text: '⚠️ *Group Anti-Delete Disabled!* 🔴\nDeleted messages from group chats will not be captured.'
+        }, { quoted: msg });
+      }
+
+      if (action === 'toggle') {
+        antiDelete.setGroupEnabled(!antiDelete.isGroupEnabled());
+        const newStatus = antiDelete.isGroupEnabled() ? '🟢 *ENABLED* (Sent to Private DM)' : '🔴 *DISABLED*';
+        return sock.sendMessage(from, {
+          text: `🛡️ *Group Anti-Delete Status:* ${newStatus}`
+        }, { quoted: msg });
+      }
+
+      // Default for group: Show status
+      const status = antiDelete.isGroupEnabled() ? '🟢 *ENABLED* (Stealth Owner DM)' : '🔴 *DISABLED*';
+      return sock.sendMessage(from, {
+        text: `🛡️ *Group Anti-Delete Status:* ${status}\n\n• Use \`.antidelgroup on\` to activate for groups.\n• Use \`.antidelgroup off\` to deactivate for groups.\n\n_Note: For private direct messages, use \`.antidelete on/off\`._`
+      }, { quoted: msg });
     }
 
-    if (firstArg === 'on' || firstArg === 'enable' || firstArg === '1') {
+    // Otherwise, handle Private Anti-Delete (.antidelete on/off/toggle)
+    if (action === 'on' || action === 'enable' || action === '1') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'
@@ -44,7 +68,7 @@ module.exports = {
       }, { quoted: msg });
     }
 
-    if (firstArg === 'off' || firstArg === 'disable' || firstArg === '0') {
+    if (action === 'off' || action === 'disable' || action === '0') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'
@@ -56,7 +80,7 @@ module.exports = {
       }, { quoted: msg });
     }
 
-    if (firstArg === 'toggle') {
+    if (action === 'toggle') {
       if (!isOwner) {
         return sock.sendMessage(from, {
           text: '⛔ *Access Denied!*\nOnly the bot owner can configure Anti-Delete.'

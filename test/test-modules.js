@@ -9,6 +9,9 @@ const {
 const moderator = require('../lib/groupModerator');
 const welcomeHandler = require('../lib/welcomeHandler');
 const commandHandler = require('../lib/commandHandler');
+const { resolveHero, getCharacterVoiceSampleBuffer } = require('../lib/heroVoices');
+const antiDelete = require('../lib/antiDelete');
+const safety = require('../lib/safety');
 const config = require('../config');
 
 async function runTests() {
@@ -1564,7 +1567,58 @@ async function runTests() {
 
   console.log('  ✅ .resetspam Command: Resets sticker spam, message spam, warnings, and guarantees zero background tagging.');
 
-  console.log('\n🎉 ALL 23 AUTOMATED TESTS PASSED SUCCESSFULLY! 🎉\n');
+  // Test 24: Ben 10 Voice Definition & Classic Sample
+  console.log('\n▶ Test 24: Verifying Ben 10 Voice Definition & Classic Sample...');
+  const ben10Char = resolveHero('ben10');
+  assert(ben10Char, 'Ben 10 character should be defined');
+  assert.strictEqual(ben10Char.id, 'ben10');
+  assert.strictEqual(ben10Char.name, 'Ben Tennyson');
+  assert(ben10Char.aliases.includes('ben'));
+  assert(ben10Char.aliases.includes('tennyson'));
+  assert(ben10Char.aliases.includes('omnitrix'));
+  const benSample = getCharacterVoiceSampleBuffer('ben10');
+  assert(benSample && benSample.length > 1000, 'Ben 10 sample audio file should exist');
+  console.log(`  ✅ Ben 10: Character resolved and signature sample verified (${benSample.length} bytes).`);
+
+  // Test 25: Separate Anti-Delete Toggles & Commands (.antidelete and .antidelgroup)
+  console.log('\n▶ Test 25: Verifying Separate Anti-Delete Toggles & Command Registration...');
+  antiDelete.setGroupEnabled(true);
+  antiDelete.setPrivateEnabled(false);
+  assert.strictEqual(antiDelete.isGroupEnabled(), true);
+  assert.strictEqual(antiDelete.isPrivateEnabled(), false);
+
+  antiDelete.setGroupEnabled(false);
+  antiDelete.setPrivateEnabled(true);
+  assert.strictEqual(antiDelete.isGroupEnabled(), false);
+  assert.strictEqual(antiDelete.isPrivateEnabled(), true);
+
+  // Restore both enabled
+  antiDelete.setGroupEnabled(true);
+  antiDelete.setPrivateEnabled(true);
+  assert(commandHandler.getCommand('antidelete'), 'Command .antidelete must be registered');
+  assert(commandHandler.getCommand('antidelgroup'), 'Command .antidelgroup alias must resolve');
+  console.log('  ✅ Separate Anti-Delete: .antidelgroup and .antidelete independently controlled & registered.');
+
+  // Test 26: Dynamic Paired User Owner Recognition
+  console.log('\n▶ Test 26: Verifying Dynamic Paired User Owner Recognition...');
+  const testPairedNumber = '12345678901';
+  safety.setPairedUser(`${testPairedNumber}@s.whatsapp.net`);
+  assert.strictEqual(safety.isOwner(`${testPairedNumber}@s.whatsapp.net`), true);
+  assert.strictEqual(safety.getOwnerJid(), `${testPairedNumber}@s.whatsapp.net`);
+  console.log('  ✅ Dynamic Owner: Any user who pairs the bot automatically becomes recognized as owner.');
+
+  // Test 27: Stale Backlog & Dedup Guard (Prevents Old Command Replay)
+  console.log('\n▶ Test 27: Verifying Deduplication & Old Command Re-execution Defense...');
+  const dedupTestMsgId = 'MOCK_DUP_TEST_MSG_' + Date.now();
+  assert.strictEqual(safety.isDuplicate(dedupTestMsgId), false, 'First arrival must not be duplicate');
+  assert.strictEqual(safety.isDuplicate(dedupTestMsgId), true, 'Immediate retry must be flagged as duplicate');
+  assert.strictEqual(safety.isDuplicate(dedupTestMsgId), true, 'Further retries must be flagged as duplicate');
+  assert.strictEqual(safety.isSentByBot('bot_outbound_msg_id'), false);
+  safety.markSentByBot('bot_outbound_msg_id');
+  assert.strictEqual(safety.isSentByBot('bot_outbound_msg_id'), true, 'Bot outbound messages must be recognized and blocked from self-loops');
+  console.log('  ✅ Dedup & Old Command Defense: Duplicate messages and self-sent loops strictly prevented.');
+
+  console.log('\n🎉 ALL 27 AUTOMATED TESTS PASSED SUCCESSFULLY! 🎉\n');
 }
 
 runTests().then(() => {
